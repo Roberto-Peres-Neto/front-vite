@@ -1,0 +1,13 @@
+/* Adicione este CSS em um arquivo global ou no main.tsx/index.html */
+.custom-tabs-no-border .ant-tabs-tab {
+  border-bottom: none !important;
+}
+
+.custom-tabs-no-border .ant-tabs-nav::before {
+    display: none !important; /* Remove a linha horizontal que as vezes aparece no Ant Design Tabs */
+}
+
+.custom-tabs-no-border .ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-active,
+.custom-tabs-no-border .ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-inactive {
+    border-bottom: none !important; /* Garante que a borda de baixo seja removida para todos os estados */
+}

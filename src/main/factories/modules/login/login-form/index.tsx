@@ -38,8 +38,10 @@ export function LoginForm({ authentication }: Props): JSX.Element {
       localStorage.setItem('auth', JSON.stringify(response))
 
       notification.success({
-        message: 'Login realizado com sucesso!',
-        duration: 3
+        message: 'Login realizado!',
+        duration: 2,
+        placement: 'topRight',
+        description: `Bem-vindo ${response.accountModel?.personalInformation?.nickname}!`
       })
 
       navigate('/home')

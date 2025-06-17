@@ -1,15 +1,16 @@
 // src/main/routes/routes.tsx
 import { authAtom, type MenuModel } from '@/presentation/atoms/authAtom'; // Importa MenuModel e AuthModel
-import { DashboardLayout } from '@/presentation/components/DashboardLayout';
+import { DashboardLayout, HomePage } from '@/presentation/components/DashboardLayout'; // Import HomePage
 import { useAtom } from 'jotai';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import makeLoginForm from '../factories/pages/login/login';
 
 // =========================================================
-// Crie/importe seus componentes de página aqui.
-// É crucial que estes componentes sejam definidos FORA da função AppRoutes
-// para evitar recriação desnecessária e problemas de renderização.
+// Componentes de página (continuam sendo definidos aqui, mas serão renderizados nas Tabs)
 // =========================================================
+
+// Estes componentes serão instanciados e passados para a aba.
+// Eles devem ser componentes React válidos.
 
 // Exemplo de componente para /warehouse/entry
 const WarehouseEntryPage: React.FC = () => (
@@ -19,10 +20,10 @@ const WarehouseEntryPage: React.FC = () => (
   </div>
 );
 
-// Exemplo de componente para /warehouse/create (mesmo que seja tipo 'modal', pode ter uma rota para ele)
+// Exemplo de componente para /warehouse/create (se você decidir ter uma rota para ele também)
 const CreateWarehousePage: React.FC = () => (
   <div className="p-4">
-    <h1 className="text-2xl font-bold text-gray-800">Página de Criar Entrada</h1>
+    <h1 className="text-2xl font-bold text-gray-800">Página de Criar Entrada (Rota Direta)</h1>
     <p className="text-gray-600 mt-2">Conteúdo da página para criar uma nova entrada no armazém.</p>
   </div>
 );
@@ -37,17 +38,6 @@ const DefaultPage: React.FC<{ routeName: string }> = ({ routeName }) => (
   </div>
 );
 
-// Seu componente HomePage existente, agora definido FORA de AppRoutes
-export function HomePage() {
-  return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold text-gray-800">Bem-vindo à Página Inicial!</h1>
-      <p className="text-gray-600 mt-2">Este é o conteúdo da sua página inicial.</p>
-      <p className="text-gray-600 mt-2">O menu lateral e o cabeçalho superior estão fixos.</p>
-    </div>
-  );
-}
-
 // =========================================================
 
 
@@ -56,60 +46,54 @@ export function AppRoutes() {
 
   return (
     <Routes>
-      {/* Rota para o formulário de login */}
       <Route path="/login" element={makeLoginForm()} />
 
-      {/* Rota principal que usa o DashboardLayout. */}
-      {/* Se o usuário não estiver autenticado, ele é redirecionado para /login. */}
-      {/* As rotas filhas serão renderizadas dentro do <Outlet /> no DashboardLayout. */}
       <Route
         path="/"
         element={auth ? <DashboardLayout /> : <Navigate to="/login" />}
       >
-        {/* Rota inicial ou padrão quando o usuário está logado (e.g., / ou /home) */}
-        <Route index element={<HomePage />} />
-        <Route path="/home" element={<HomePage />} />
+        {/*
+          Estas rotas aqui no routes.tsx são para que o React Router
+          saiba que essas URLs são válidas e podem ser acessadas.
+          A renderização do *conteúdo* dessas rotas será feita pelas Tabs
+          dentro do DashboardLayout. O 'element' aqui pode ser um placeholder
+          ou um componente que não renderiza nada diretamente,
+          pois o conteúdo real vem do estado das tabs.
+        */}
+        <Route index element={<HomePage />} /> {/* Renderiza HomePage para '/' */}
+        <Route path="/home" element={<HomePage />} /> {/* Renderiza HomePage para '/home' */}
 
-        {/* Mapeia dinamicamente as rotas com base nos menus do usuário logado */}
         {auth?.menus?.map((menu: MenuModel) => {
-          // Apenas adiciona rotas para itens de menu que possuem uma 'route' definida
-          // e que você deseja que sejam acessíveis via URL (tipo 'menu', por exemplo).
-          // Se "modal" deve abrir um modal real, a lógica seria diferente no onClick do menu,
-          // e não necessariamente uma rota aqui, mas para fins de demonstração, incluiremos.
-          if (menu.routes) {
+          // Para menus do tipo 'menu', crie uma rota. O conteúdo será gerenciado pelas Tabs.
+          // Para 'modal' ou 'external', não é necessário uma rota aninhada aqui,
+          // pois a ação será tratada diretamente no onClick do menu no DashboardLayout.
+          if (menu.routes && menu.type === 'menu') {
+            // O componente aqui pode ser um placeholder ou o próprio componente real,
+            // mas o DashboardLayout é quem decidirá qual aba está ativa e seu conteúdo.
+            // Aqui estamos apenas definindo que esta rota é um caminho válido.
             let ComponentToRender: React.FC<any>;
-
-            // Mapeia a rota do menu para o componente React correspondente
             switch (menu.routes) {
               case '/warehouse/entry':
                 ComponentToRender = WarehouseEntryPage;
                 break;
-              case '/warehouse/create': // Mesmo sendo "modal", se tiver rota, pode ser mapeado.
-                ComponentToRender = CreateWarehousePage;
-                break;
-              // Adicione mais casos aqui para cada rota que você tiver em seus menus
-              // case '/sua/nova/rota':
-              //   ComponentToRender = SeuNovoComponentePage;
-              //   break;
+              // Adicione outros casos para rotas "normais" (tipo 'menu')
               default:
-                // Se a rota não for mapeada para um componente específico, use um componente padrão
                 ComponentToRender = () => <DefaultPage routeName={menu.name} />;
                 break;
             }
-
             return (
               <Route
-                key={menu.id} // Use o ID do menu como chave única para a rota
+                key={menu.id}
                 path={menu.routes}
-                element={<ComponentToRender />}
+                element={<ComponentToRender />} // O elemento aqui é o componente que você quer que apareça na aba
               />
             );
           }
-          return null; // Não renderiza rotas para itens sem 'route'
+          return null;
         })}
       </Route>
 
-      {/* Rota de fallback para qualquer caminho não encontrado */}
+      {/* Rota de fallback para qualquer caminho não encontrado, redireciona para home */}
       <Route path="*" element={<Navigate to="/home" />} />
     </Routes>
   );
