@@ -1,15 +1,17 @@
 // src/presentation/components/DashboardLayout.tsx
 import {
+  BulbOutlined,
   HomeOutlined,
   InboxOutlined,
   LogoutOutlined,
+  MoonOutlined,
   PlusCircleOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 // Import MenuInfo from antd/lib/menu for correct click event typing
 import { Avatar, Button, ConfigProvider, Dropdown, Layout, Menu, Modal, Space, Tabs, Typography, theme as antdTheme, type MenuProps } from 'antd';
 import { useAtom, type Atom } from 'jotai';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { authAtom, type MenuModel } from '../atoms/authAtom';
 import { activeTabKeyAtom, modalStateAtom, openedTabsAtom, type TabPane } from '../atoms/uiAtoms';
@@ -285,26 +287,45 @@ export const DashboardLayout: React.FC = () => {
     document.body.setAttribute('data-theme', theme);
   }, [theme]);
 
+  useEffect(() => {
+    document.body.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  // Ref para o timeout do debounce
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Função debounce para alternar o estado de colapsado
+  const handleLogoClickDebounced = useCallback(() => {
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    debounceTimeoutRef.current = setTimeout(() => {
+      setCollapsed(prev => !prev);
+      debounceTimeoutRef.current = null;
+    }, 100); // 100ms de debounce
+  }, [setCollapsed]);
+
   return (
     <ConfigProvider
       theme={{
         algorithm: themeAlgorithm,
         token: {
-          colorBgBase: theme === 'dark' ? '#1f1f1f' : '#fff',
-          colorTextBase: theme === 'dark' ? '#fff' : '#000',
+          colorBgBase: theme === 'dark' ? '#1f1f1f' : '#f5f5f5',
+          colorTextBase: theme === 'dark' ? '#e8e8e8' : '#000000',
           colorPrimary: '#1677ff',
         },
       }}
     >
 
-      <Layout style={{ minHeight: '100vh' }}>
+      <Layout style={{ minHeight: '100vh', transition: 'margin-left 0.2s cubic-bezier(0.4,0,0.2,1)', }}>
         <Sider
           collapsed={collapsed}
           onCollapse={setCollapsed}
           theme={theme}
           width={250}
-          collapsedWidth={80}
+          collapsedWidth={50}
           style={{
+            background: theme === 'dark' ? '#000000' : '#e8e8e8',
             overflow: 'auto',
             height: '100vh',
             position: 'fixed',
@@ -312,11 +333,13 @@ export const DashboardLayout: React.FC = () => {
             top: 0,
             bottom: 0,
             boxShadow: '2px 0 6px rgba(0, 21, 41, 0.35)',
+            transition: 'width 0.2s cubic-bezier(0.4,0,0.2,1)', // Suaviza a largura do Sider
+
           }}
         >
           <div
             className="logo"
-            onClick={() => setCollapsed(!collapsed)}
+            onClick={handleLogoClickDebounced}
             style={{
               height: 64,
               display: 'flex',
@@ -324,7 +347,7 @@ export const DashboardLayout: React.FC = () => {
               justifyContent: collapsed ? 'center' : 'flex-start',
               padding: collapsed ? '0' : '0 24px',
               cursor: 'pointer',
-               background: theme === 'dark' ? '#141414' : '#fff',
+              background: theme === 'dark' ? '#000000' : '#e8e8e8',
               borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
               borderRadius: '0 8px 0 0', // Adicionado border radius aqui
             }}
@@ -334,12 +357,17 @@ export const DashboardLayout: React.FC = () => {
             ) : (
               <Space>
                 <img src="https://placehold.co/40x40/000/FFF?text=L" alt="Logo" style={{ borderRadius: '50%' }} />
-                <Text style={{ color: 'white', fontSize: '1.2em', marginLeft: 8 }}>Avisei Felipe</Text>
+                <Text style={{ color: theme === 'dark' ? '#e8e8e8' : '#000000', fontSize: '1.2em', marginLeft: 8, background: theme === 'dark' ? '#000000' : '#e8e8e8' }}>
+                  {auth?.accountModel.nickname || 'Dashboard'}
+                </Text>
               </Space>
             )}
           </div>
           <Menu
             theme={theme}
+            style={{
+              background: theme === 'dark' ? '#000000' : '#e8e8e8',
+            }}
             mode="inline"
             selectedKeys={[getSelectedMenuKey()]}
             onClick={handleMenuItemClick}
@@ -347,17 +375,17 @@ export const DashboardLayout: React.FC = () => {
           />
         </Sider>
 
-        <Layout style={{ marginLeft: collapsed ? 80 : 250, transition: 'margin-left 0.2s' }}>
+        <Layout style={{ marginLeft: collapsed ? 50 : 250, transition: 'margin-left 0.2s' }}>
           <Header
             style={{
-              backgroundColor: theme === 'dark' ? '#141414' : '#e8e8e8',
+              backgroundColor: theme === 'dark' ? '#000000' : '#e8e8e8',
               height: 40, // Altura fixa
               display: 'flex',
               flexDirection: 'row',
               justifyContent: 'space-between',
               alignItems: 'center',
               position: 'fixed',
-              left: collapsed ? 80 : 250,
+              left: collapsed ? 50 : 250,
               right: 0,
               top: 0,
               zIndex: 100,
@@ -378,11 +406,11 @@ export const DashboardLayout: React.FC = () => {
                   minWidth: '100%',
                   height: '100%',
                   display: 'inline-flex',
-                  background: theme === 'dark' ? '#141414' : '#fff',
+                  background: theme === 'dark' ? '#000000' : '#e8e8e8',
                 }}
                 tabBarStyle={{
                   marginBottom: 0,
-                  background: theme === 'dark' ? '#141414' : '#fff',
+                  background: theme === 'dark' ? '#000000' : '#e8e8e8',
                   borderBottom: 'none', // Remove a linha
                   paddingLeft: 24,
                 }}
@@ -405,15 +433,15 @@ export const DashboardLayout: React.FC = () => {
               <Button
                 type="text"
                 onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-                icon={theme === 'light' ? <UserOutlined /> : <UserOutlined />} // Troque por um ícone de lua/sol se quiser
+                icon={theme === 'light' ? <BulbOutlined /> : <MoonOutlined />} // Troque por um ícone de lua/sol se quiser
               >
-                {theme === 'light' ? 'Dark' : 'Light'}
+                {/* {theme} */}
               </Button>
               <Dropdown menu={{ items: profileMenuItems }} placement="bottomRight" arrow>
                 <Button type="text" style={{ padding: 0 }}>
                   <Space>
-                    <Avatar src={auth?.accountModel?.personalInformation?.nickname} icon={<UserOutlined />} />
-                    <Text strong>{auth?.accountModel?.personalInformation?.completeName}</Text>
+                    <Avatar src={auth?.accountModel?.nickname} icon={<UserOutlined />} />
+                    <Text strong>{auth?.accountModel?.completeName}</Text>
                   </Space>
                 </Button>
               </Dropdown>
@@ -423,12 +451,12 @@ export const DashboardLayout: React.FC = () => {
           {/* Content (Área onde as rotas serão renderizadas) */}
           <Content
             style={{
-              background: theme === 'dark' ? '#1f1f1f' : '#fff',
-              color: theme === 'dark' ? '#fff' : '#000',
+              background: theme === 'dark' ? '#1f1f1f' : '#f5f5f5',
+              color: theme === 'dark' ? '#f5f5f5' : '#000',
               marginTop: 40,
               marginRight: 0,
               marginBottom: 0,
-              marginLeft: 0,
+              marginLeft: 8,
               padding: 24,
               minHeight: 'calc(100vh - 64px)',
               boxShadow: 'none', // Remove sombra

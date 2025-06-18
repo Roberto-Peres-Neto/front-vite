@@ -41,7 +41,7 @@ export function LoginForm({ authentication }: Props): JSX.Element {
         message: 'Login realizado!',
         duration: 2,
         placement: 'topRight',
-        description: `Bem-vindo ${response.accountModel?.personalInformation?.nickname}!`
+        description: `Bem-vindo ${response.accountModel?.nickname}!`
       })
 
       navigate('/home')
